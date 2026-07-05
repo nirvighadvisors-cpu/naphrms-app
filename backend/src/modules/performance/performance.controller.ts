@@ -65,7 +65,7 @@ export const createCycle = async (req: Request, res: Response): Promise<void> =>
   // Notify Employees
   try {
     const employees = await prisma.employee.findMany({
-      where: { status: 'ACTIVE', userId: { not: null } },
+      where: { status: 'ACTIVE', userId: { not: undefined } },
       select: { userId: true },
     });
     const userIds = employees.map(e => e.userId).filter(Boolean) as string[];

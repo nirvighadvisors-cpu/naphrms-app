@@ -46,7 +46,7 @@ export const uploadPolicy = async (req: Request, res: Response): Promise<void> =
     // Notify all active employees about new policy
     try {
       const employees = await prisma.employee.findMany({
-        where: { status: 'ACTIVE', userId: { not: null } },
+        where: { status: 'ACTIVE', userId: { not: undefined } },
         select: { userId: true },
       });
       const userIds = employees.map(e => e.userId).filter(Boolean) as string[];
