@@ -1,0 +1,1122 @@
+// ============================================================
+// NAP HRMS — Prisma Schema (PostgreSQL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ────────────────────────────────────────────────────────────
+// ENUMS
+// ────────────────────────────────────────────────────────────
+
+enum Role {
+  HR_ADMIN
+  EMPLOYEE
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACTOR
+  INTERN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+  PENDING_REGISTRATION
+}
+
+enum AttendanceSource {
+  WEB
+  MOBILE
+  GPS_VERIFIED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LATE
+  WFH
+  ON_LEAVE
+  HOLIDAY
+  WEEKEND
+}
+
+enum ApprovalStatus {
+  PENDING
+  PENDING_DOCS
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum RegularizationType {
+  REGULAR
+  WFH
+}
+
+enum ComponentType {
+  EARNING
+  DEDUCTION
+}
+
+enum CalcType {
+  FIXED
+  PERCENTAGE_OF_BASIC
+  PERCENTAGE_OF_GROSS
+  PERCENTAGE_OF_CTC
+  FORMULA
+  SLAB_BASED
+}
+
+enum ComponentCategory {
+  EARNING
+  DEDUCTION
+  REIMBURSEMENT
+  BONUS
+  STATUTORY_EMPLOYEE
+  STATUTORY_EMPLOYER
+}
+
+enum TaxRegime {
+  OLD
+  NEW
+}
+
+enum PayrollStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  LOCKED
+}
+
+enum ExpenseCategory {
+  TRAVEL
+  LOCAL_TRANSPORT
+  ACCOMMODATION
+  MEALS
+  CLIENT_ENTERTAINMENT
+  SITE_VISIT
+  OFFICE_SUPPLIES
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  APPROVED_FOR_PAYMENT
+  PAID
+}
+
+enum CycleStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  SELF_REVIEW_PENDING
+  SELF_SUBMITTED
+  HR_REVIEW_PENDING
+  COMPLETED
+}
+
+enum DocumentType {
+  PAN_CARD
+  AADHAAR
+  BANK_PASSBOOK
+  PROFILE_PHOTO
+  OFFER_LETTER
+  APPOINTMENT_LETTER
+  CONTRACT
+  NDA
+  EDUCATION_CERT
+  EXPERIENCE_CERT
+  SIGNATURE
+  CANCELLED_CHEQUE
+  FITNESS_CERTIFICATE
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SKIPPED
+}
+
+enum NotifType {
+  LEAVE
+  ATTENDANCE
+  PAYROLL
+  EXPENSE
+  PERFORMANCE
+  SYSTEM
+}
+
+enum AnnouncementPriority {
+  URGENT
+  NORMAL
+  INFO
+}
+
+enum TicketCategory {
+  IT_SUPPORT
+  PAYROLL
+  HR_GENERAL
+  FACILITIES
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SurveyQuestionType {
+  TEXT
+  RATING
+  MULTIPLE_CHOICE
+}
+
+// ────────────────────────────────────────────────────────────
+// USER & AUTH
+// ────────────────────────────────────────────────────────────
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String?
+  role            Role       @default(EMPLOYEE)
+  status          UserStatus @default(INVITED)
+  inviteToken     String?    @unique
+  inviteExpiresAt DateTime?
+  lastLoginAt     DateTime?
+  loginAttempts   Int        @default(0)
+  lockedUntil     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  employee           Employee?
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  statusChanges      EmployeeStatusHistory[]
+  announcements      Announcement[]
+  announcementReads  AnnouncementRead[]
+  assignedTickets    Ticket[] @relation("AssignedTickets")
+  ticketComments     TicketComment[]
+  pushSubscriptions  PushSubscription[]
+
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+// ────────────────────────────────────────────────────────────
+// EMPLOYEE
+// ────────────────────────────────────────────────────────────
+
+model Employee {
+  id                    String         @id @default(uuid())
+  employeeCode          String?        @unique // e.g. NVA-0042
+  userId                String         @unique
+  user                  User           @relation(fields: [userId], references: [id])
+  
+  dailyLogs             DailyLog[]
+  ticketsRaised         Ticket[]       @relation("RaisedTickets")
+  surveyResponses       SurveyResponse[]
+  recognitionsGiven     Recognition[]  @relation("RecognitionsGiven")
+  recognitionsReceived  Recognition[]  @relation("RecognitionsReceived")
+
+  // Personal
+  firstName             String
+  middleName            String?
+  lastName              String
+  gender                Gender?
+  dateOfBirth           DateTime?
+  maritalStatus         MaritalStatus?
+  bloodGroup            String?
+  profilePhotoUrl       String?
+  personalEmail         String?
+  phone                 String?
+  alternatePhone        String?
+  currentAddress        String?        // JSON: {street, area, city, state, pincode, landmark}
+  permanentAddress      String?        // JSON: {street, area, city, state, pincode, landmark}
+  emergencyContactName  String?
+  emergencyContactRel   String?
+  emergencyContactPhone String?
+  emergencyContact2Name  String?
+  emergencyContact2Rel   String?
+  emergencyContact2Phone String?
+
+  dateOfJoining         DateTime
+  dateOfLeaving         DateTime?
+  employmentType        EmploymentType @default(FULL_TIME)
+  weekOffDays           String[]       @default(["SUNDAY"])
+  weekOffHistory        Json?          // [{ weekOffDays: string[], effectiveFrom: string }]
+  designation           String
+  departmentId          String
+  department            Department     @relation(fields: [departmentId], references: [id])
+  workSiteId            String?
+  workSite              WorkSite?      @relation(fields: [workSiteId], references: [id])
+  managerId             String?
+  manager               Employee?      @relation("Reports", fields: [managerId], references: [id])
+  reportees             Employee[]     @relation("Reports")
+  status                EmployeeStatus @default(ACTIVE)
+
+  // Onboarding
+  isProfileComplete     Boolean        @default(false)
+  profileCompletedAt    DateTime?
+  probationEndsAt       DateTime?
+  isProbationLeaveCredited Boolean     @default(false)
+  onboardingStep        Int            @default(0)
+  signatureUrl          String?
+  offerLetterSignedAt   DateTime?
+  offerLetterStatus     String         @default("PENDING") // PENDING | E_SIGN_SUBMITTED | OFFER_DETAILS_SUBMITTED | AWAITING_HR_COMPLETION | OFFER_FINALIZED
+  offerLetterDetailsSubmittedAt DateTime?
+  partialOfferLetterUrl String?        // URL to the .docx with e-sign embedded
+  finalOfferLetterUrl   String?        // URL to the final PDF uploaded by HR
+
+  // Sensitive (encrypted at app level)
+  panNumber             String?
+  aadhaarNumber         String?
+  bankAccountNumber     String?
+  bankAccountHolder     String?
+  bankIFSC              String?
+  bankName              String?
+  bankBranch            String?
+
+  // Salary
+  basicSalary           Float?
+  salaryStructureId     String?
+  salaryStructure       SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
+  isEsicCovered         Boolean        @default(false)
+  esicNumber            String?
+  taxRegime             TaxRegime      @default(NEW)
+  uanNumber             String?
+  pfAccountNumber       String?
+
+  // Relations
+  attendance            AttendanceRecord[]
+  leaveBalances         LeaveBalance[]
+  leaveRequests         LeaveRequest[]
+  payslips              Payslip[]
+  expenses              ExpenseClaim[]
+  documents             EmployeeDocument[]
+  goalsAssigned         Goal[]
+  reviews               Review[]
+  statusHistory         EmployeeStatusHistory[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([employeeCode])
+  @@index([departmentId])
+  @@index([workSiteId])
+  @@index([status])
+  @@map("employees")
+}
+
+// ────────────────────────────────────────────────────────────
+// EMPLOYEE STATUS HISTORY (Audit Trail)
+// ────────────────────────────────────────────────────────────
+
+model EmployeeStatusHistory {
+  id          String         @id @default(uuid())
+  employeeId  String
+  employee    Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  fromStatus  EmployeeStatus?
+  toStatus    EmployeeStatus
+  reason      String?
+  changedById String?
+  changedBy   User?          @relation(fields: [changedById], references: [id])
+  createdAt   DateTime       @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
+  @@map("employee_status_history")
+}
+
+// ────────────────────────────────────────────────────────────
+// DEPARTMENT & WORKSITE
+// ────────────────────────────────────────────────────────────
+
+model Department {
+  id         String       @id @default(uuid())
+  name       String       @unique // e.g. Sales, GRE, Accounts
+  code       String       @unique // e.g. "SALES", "SRC", "CLS", "GRE", "ACC"
+  codeInitial String      @default("X") // Single letter used in employee codes
+  parentId   String?
+  parent     Department?  @relation("DepartmentParent", fields: [parentId], references: [id])
+  children   Department[] @relation("DepartmentParent")
+  employees      Employee[]
+  announcements  Announcement[]
+  surveys            Survey[]
+  
+  createdAt      DateTime     @default(now())
+
+  @@map("departments")
+}
+
+model WorkSite {
+  id         String             @id @default(uuid())
+  name       String             // e.g. "Thane Project", "Head Office Virar"
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  radius     Int?               @default(200) // geofencing radius in meters
+  employees  Employee[]
+  attendance AttendanceRecord[]
+  createdAt  DateTime           @default(now())
+
+  @@map("work_sites")
+}
+
+// ────────────────────────────────────────────────────────────
+// ATTENDANCE
+// ────────────────────────────────────────────────────────────
+
+model AttendanceRecord {
+  id               String             @id @default(uuid())
+  employeeId       String
+  employee         Employee           @relation(fields: [employeeId], references: [id])
+  date             DateTime           @db.Date
+  punchInTime      DateTime?
+  punchOutTime     DateTime?
+  punchInLat       Float?
+  punchInLng       Float?
+  punchOutLat      Float?
+  punchOutLng      Float?
+  workSiteId       String?
+  workSite         WorkSite?          @relation(fields: [workSiteId], references: [id])
+  source           AttendanceSource   @default(WEB)
+  status           AttendanceStatus
+  workHours        Float?             // computed on punch-out
+  isRegularized    Boolean            @default(false)
+  isAutoPunchedOut Boolean            @default(false)
+  isCompOffCredited Boolean           @default(false)
+  autoPunchOutNote String?            // e.g. "Auto-punched out at 10:30 PM (System)"
+  autoPunchOutTime DateTime?          // deadline for auto-punch-out (default 10:30 PM IST, extendable)
+  punchInPhotoPath  String?            // Supabase storage path for punch-in selfie
+  punchOutPhotoPath String?            // Supabase storage path for punch-out selfie
+  regularizationReq RegularizationRequest?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
+  @@index([date])
+  @@map("attendance_records")
+}
+
+model RegularizationRequest {
+  id           String              @id @default(uuid())
+  attendanceId String              @unique
+  attendance   AttendanceRecord    @relation(fields: [attendanceId], references: [id])
+  type         RegularizationType  @default(REGULAR)
+  reason       String
+  requestedIn  DateTime?
+  requestedOut DateTime?
+  status       ApprovalStatus      @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  remarks      String?
+  createdAt    DateTime            @default(now())
+
+  @@map("regularization_requests")
+}
+
+// ────────────────────────────────────────────────────────────
+// LEAVE
+// ────────────────────────────────────────────────────────────
+
+model LeaveType {
+  id             String         @id @default(uuid())
+  name           String         @unique // CL, SL, PL, LWP, Comp-Off
+  code           String         @unique
+  description    String?
+  isPaid         Boolean        @default(true)
+  maxDaysPerYear Int            @default(12)
+  carryForward   Boolean        @default(false)
+  maxCarryForward Int?
+  requiresDoc    Boolean        @default(false) // SL over 2 days needs medical cert
+  noticeDays     Int            @default(0)
+  balances       LeaveBalance[]
+  requests       LeaveRequest[]
+  createdAt      DateTime       @default(now())
+
+  @@map("leave_types")
+}
+
+model LeaveBalance {
+  id            String    @id @default(uuid())
+  employeeId    String
+  employee      Employee  @relation(fields: [employeeId], references: [id])
+  leaveTypeId   String
+  leaveType     LeaveType @relation(fields: [leaveTypeId], references: [id])
+  year          Int
+  totalDays     Float
+  usedDays      Float     @default(0)
+  pendingDays   Float     @default(0)
+  remainingDays Float     // computed: totalDays - usedDays - pendingDays
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@index([employeeId])
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id           String         @id @default(uuid())
+  employeeId   String
+  employee     Employee       @relation(fields: [employeeId], references: [id])
+  leaveTypeId  String
+  leaveType    LeaveType      @relation(fields: [leaveTypeId], references: [id])
+  startDate    DateTime       @db.Date
+  endDate      DateTime       @db.Date
+  totalDays    Float
+  reason       String
+  attachment   String?        // URL for medical cert etc.
+  
+  // Maternity Leave Specific Fields
+  childNumber          Int?
+  expectedDeliveryDate DateTime? @db.Date
+  
+  status       ApprovalStatus @default(PENDING)
+  approvedById String?
+  approvedAt   DateTime?
+  remarks      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("leave_requests")
+}
+
+// ────────────────────────────────────────────────────────────
+// HOLIDAYS
+// ────────────────────────────────────────────────────────────
+
+model Holiday {
+  id          String   @id @default(uuid())
+  name        String
+  date        DateTime @db.Date
+  year        Int
+  isRestricted Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([date])
+  @@index([year])
+  @@map("holidays")
+}
+
+// ────────────────────────────────────────────────────────────
+// PAYROLL
+// ────────────────────────────────────────────────────────────
+
+model SalaryStructure {
+  id         String            @id @default(uuid())
+  name       String            @unique // e.g. "L1 Sales Staff", "L3 Manager"
+  components SalaryComponent[]
+  versions   StructureVersion[]
+  employees  Employee[]
+  createdAt  DateTime          @default(now())
+
+  @@map("salary_structures")
+}
+
+model SalaryComponent {
+  id              String          @id @default(uuid())
+  structureId     String
+  structure       SalaryStructure @relation(fields: [structureId], references: [id], onDelete: Cascade)
+  name            String          // Basic, HRA, Conveyance, Medical, PF, PT, TDS
+  code            String?         // unique code for formula evaluation e.g. "BASIC", "HRA"
+  type            ComponentType   // EARNING or DEDUCTION (legacy, use category going forward)
+  category        ComponentCategory @default(EARNING)
+  calculationType CalcType        // FIXED, PERCENTAGE_OF_BASIC, PERCENTAGE_OF_GROSS, FORMULA, etc.
+  value           Float           // the fixed amount or percentage
+  formula         String?         // e.g. "BASIC * 0.4"
+  dependsOn       String[]        // array of component codes this depends on
+  isStatutory     Boolean         @default(false)
+  isTaxable       Boolean         @default(true)
+  minValue        Float?          // minimum cap
+  maxValue        Float?          // maximum cap
+  slabConfig      Json?           // configuration for slab-based (e.g. PT, TDS)
+  order           Int             // display order
+
+  @@unique([structureId, code])
+  @@map("salary_components")
+}
+
+model StructureVersion {
+  id                 String          @id @default(uuid())
+  structureId        String
+  structure          SalaryStructure @relation(fields: [structureId], references: [id], onDelete: Cascade)
+  versionNumber      Int
+  componentsSnapshot Json
+  createdBy          String
+  createdAt          DateTime        @default(now())
+
+  @@map("structure_versions")
+}
+
+model StatutoryRule {
+  id              String   @id @default(uuid())
+  code            String   @unique // e.g. PF, ESI, PT_MH, TDS
+  name            String
+  description     String?
+  ruleType        String   // PERCENTAGE, SLAB
+  baseComponent   String?  // e.g. BASIC, GROSS
+  employerRate    Float    @default(0)
+  employeeRate    Float    @default(0)
+  wageCap         Float?   // e.g. 15000 for PF
+  slabConfig      Json?    // e.g. PT slabs
+  isActive        Boolean  @default(true)
+  state           String?  // e.g. MH, KA for PT
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("statutory_rules")
+}
+
+model PayrollRun {
+  id            String        @id @default(uuid())
+  month         Int
+  year          Int
+  status        PayrollStatus @default(DRAFT)
+  generatedById String
+  processedAt   DateTime?
+  lockedAt      DateTime?
+  payslips      Payslip[]
+  createdAt     DateTime      @default(now())
+
+  @@unique([month, year])
+  @@map("payroll_runs")
+}
+
+model PayrollAuditLog {
+  id              String   @id @default(uuid())
+  entityType      String   // e.g., 'SALARY_STRUCTURE', 'PAYROLL_RUN'
+  entityId        String
+  action          String   // e.g., 'CREATE', 'UPDATE', 'DELETE'
+  changes         Json?    // { before: {...}, after: {...} }
+  performedById   String
+  performedAt     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("payroll_audit_logs")
+}
+
+model Payslip {
+  id              String     @id @default(uuid())
+  employeeId      String
+  employee        Employee   @relation(fields: [employeeId], references: [id])
+  payrollRunId    String
+  payrollRun      PayrollRun @relation(fields: [payrollRunId], references: [id])
+  month           Int
+  year            Int
+  basicSalary     Float
+  earnings        Json       // { "HRA": 5000, "Conveyance": 1600, ... }
+  deductions      Json       // { "PF": 1800, "PT": 200, "TDS": 0, ... }
+  companyContributions Json? // { "PF (Employer)": 1800, ... }
+  grossEarnings   Float
+  totalDeductions Float
+  netPayable      Float
+  taxRegime       String?
+  taxableIncome   Float      @default(0)
+  taxBreakdown    Json?
+  workingDays     Int
+  presentDays     Float
+  pdfUrl          String?
+  generatedAt     DateTime   @default(now())
+  lineItems       PayslipLineItem[]
+
+  @@index([employeeId, month, year])
+  @@map("payslips")
+}
+
+model PayslipLineItem {
+  id              String   @id @default(uuid())
+  payslipId       String
+  payslip         Payslip  @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  name            String
+  code            String?
+  category        String
+  type            String   // EARNING or DEDUCTION
+  calculationType String
+  rawValue        Float
+  baseAmount      Float
+  calculatedAmount Float
+  formula         String?
+  order           Int
+
+  @@map("payslip_line_items")
+}
+
+// ────────────────────────────────────────────────────────────
+// EXPENSES
+// ────────────────────────────────────────────────────────────
+
+model ExpenseClaim {
+  id            String          @id @default(uuid())
+  employeeId    String
+  employee      Employee        @relation(fields: [employeeId], references: [id])
+  title         String
+  category      ExpenseCategory
+  totalAmount   Float
+  items         ExpenseItem[]
+  status        ApprovalStatus  @default(PENDING)
+  approvedById  String?
+  approvedAt    DateTime?
+  remarks       String?
+  paymentStatus PaymentStatus   @default(UNPAID)
+  paidAt        DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("expense_claims")
+}
+
+model ExpenseItem {
+  id          String       @id @default(uuid())
+  claimId     String
+  claim       ExpenseClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  description String
+  amount      Float
+  date        DateTime     @db.Date
+  receiptUrl  String?
+
+  @@map("expense_items")
+}
+
+// ────────────────────────────────────────────────────────────
+// PERFORMANCE
+// ────────────────────────────────────────────────────────────
+
+model ReviewCycle {
+  id        String      @id @default(uuid())
+  name      String      // e.g. "H1 2025 Review"
+  startDate DateTime
+  endDate   DateTime
+  status    CycleStatus @default(ACTIVE)
+  goals     Goal[]
+  reviews   Review[]
+  createdAt DateTime    @default(now())
+
+  @@map("review_cycles")
+}
+
+model Goal {
+  id          String     @id @default(uuid())
+  employeeId  String
+  employee    Employee   @relation(fields: [employeeId], references: [id])
+  cycleId     String
+  cycle       ReviewCycle @relation(fields: [cycleId], references: [id])
+  title       String
+  description String?
+  targetDate  DateTime?
+  status      GoalStatus @default(NOT_STARTED)
+  progress    Int        @default(0) // 0-100
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([employeeId])
+  @@map("goals")
+}
+
+model Review {
+  id           String       @id @default(uuid())
+  employeeId   String
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  cycleId      String
+  cycle        ReviewCycle  @relation(fields: [cycleId], references: [id])
+  selfRating   Float?       // 1-5
+  selfComments String?
+  hrRating     Float?
+  hrComments   String?
+  finalRating  Float?
+  status       ReviewStatus @default(SELF_REVIEW_PENDING)
+  submittedAt  DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([employeeId])
+  @@map("reviews")
+}
+
+// ────────────────────────────────────────────────────────────
+// DOCUMENTS
+// ────────────────────────────────────────────────────────────
+
+model EmployeeDocument {
+  id                    String              @id @default(uuid())
+  employeeId            String
+  employee              Employee            @relation(fields: [employeeId], references: [id])
+  type                  DocumentType
+  fileName              String
+  fileUrl               String
+  fileSize              Int?
+  uploadedById          String
+  expiresAt             DateTime?
+  verificationStatus    VerificationStatus  @default(PENDING)
+  verificationRemarks   String?
+  extractedData         Json?
+  verifiedAt            DateTime?
+  aiRawResponse         String?
+  createdAt             DateTime            @default(now())
+
+  @@index([employeeId])
+  @@map("employee_documents")
+}
+
+model PolicyDocument {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  fileUrl     String
+  version     String   @default("1.0")
+  isActive    Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("policy_documents")
+}
+
+// ── Timesheet & Activity Tracking (Phase 10) ──────────────────────────────────
+
+model DailyLog {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  
+  date        DateTime @db.Date // The day the log corresponds to
+  content     String   @db.Text // The actual bullet points or summary
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId, date]) // Usually one log per employee per day
+  @@map("daily_logs")
+}
+
+// ────────────────────────────────────────────────────────────
+// AUDIT & NOTIFICATIONS
+// ────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String   // e.g. "EMPLOYEE_UPDATED", "PAYROLL_RUN", "LEAVE_APPROVED"
+  targetId   String?  // ID of the affected resource
+  targetType String?  // "Employee", "LeaveRequest", etc.
+  status     String   // 'SUCCESS' | 'FAILED'
+  details    Json?    // diff or extra details
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, action])
+  @@index([targetId])
+  @@map("audit_logs")
+}
+
+// ────────────────────────────────────────────────────────────
+// SYSTEM SETTINGS (Phase 11)
+// ────────────────────────────────────────────────────────────
+
+model SystemSetting {
+  key         String   @id // e.g. 'SHIFT_START_TIME', 'COMPANY_NAME'
+  value       String   @db.Text
+  type        String   @default("STRING") // "STRING", "BOOLEAN", "NUMBER", "JSON"
+  description String?
+  isPublic    Boolean  @default(false) // If true, visible without admin auth
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotifType
+  isRead    Boolean   @default(false)
+  linkUrl   String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+// ────────────────────────────────────────────────────────────
+// ANNOUNCEMENTS
+// ────────────────────────────────────────────────────────────
+
+model Announcement {
+  id                 String               @id @default(uuid())
+  title              String
+  content            String
+  priority           AnnouncementPriority  @default(NORMAL)
+  targetDepartmentId String?
+  targetDepartment   Department?           @relation(fields: [targetDepartmentId], references: [id])
+  isActive           Boolean               @default(true)
+  publishedAt        DateTime              @default(now())
+  expiresAt          DateTime?
+  authorId           String
+  author             User                  @relation(fields: [authorId], references: [id])
+  reads              AnnouncementRead[]
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([isActive, publishedAt])
+  @@index([expiresAt])
+  @@map("announcements")
+}
+
+model AnnouncementRead {
+  id               String       @id @default(uuid())
+  announcementId   String
+  announcement     Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt           DateTime     @default(now())
+
+  @@unique([announcementId, userId])
+  @@map("announcement_reads")
+}
+
+// ────────────────────────────────────────────────────────────
+// HELPDESK TICKETING
+// ────────────────────────────────────────────────────────────
+
+model Ticket {
+  id           String         @id @default(uuid())
+  subject      String
+  description  String
+  category     TicketCategory
+  priority     TicketPriority @default(MEDIUM)
+  status       TicketStatus   @default(OPEN)
+  
+  employeeId   String
+  employee     Employee       @relation("RaisedTickets", fields: [employeeId], references: [id])
+  
+  assignedToId String?
+  assignedTo   User?          @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  
+  comments     TicketComment[]
+  
+  resolvedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([status])
+  @@index([employeeId])
+  @@index([assignedToId])
+  @@map("tickets")
+}
+
+model TicketComment {
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  content   String
+  isInternal Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ticketId])
+  @@map("ticket_comments")
+}
+
+// ────────────────────────────────────────────────────────────
+// SURVEYS & FEEDBACK
+// ────────────────────────────────────────────────────────────
+
+model Survey {
+  id                 String           @id @default(uuid())
+  title              String
+  description        String?
+  isActive           Boolean          @default(true)
+  targetDepartmentId String?
+  targetDepartment   Department?      @relation(fields: [targetDepartmentId], references: [id])
+  expiresAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  
+  questions          SurveyQuestion[]
+  responses          SurveyResponse[]
+
+  @@map("surveys")
+}
+
+model SurveyQuestion {
+  id        String             @id @default(uuid())
+  surveyId  String
+  survey    Survey             @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  type      SurveyQuestionType
+  text      String
+  options   Json?              // For MULTIPLE_CHOICE: array of strings
+  order     Int
+  
+  answers   SurveyAnswer[]
+
+  @@map("survey_questions")
+}
+
+model SurveyResponse {
+  id         String         @id @default(uuid())
+  surveyId   String
+  survey     Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee       @relation(fields: [employeeId], references: [id])
+  submittedAt DateTime      @default(now())
+  
+  answers    SurveyAnswer[]
+
+  @@unique([surveyId, employeeId])
+  @@map("survey_responses")
+}
+
+model SurveyAnswer {
+  id         String         @id @default(uuid())
+  responseId String
+  response   SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId String
+  question   SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  textValue  String?
+  numberValue Int?
+  optionValue String?
+
+  @@unique([responseId, questionId])
+  @@map("survey_answers")
+}
+
+// ────────────────────────────────────────────────────────────
+// COMPANY SETTINGS
+// ────────────────────────────────────────────────────────────
+
+model CompanySetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+  updatedAt DateTime @updatedAt
+
+  @@map("company_settings")
+}
+
+// ────────────────────────────────────────────────────────────
+// GLOBAL SEQUENCE (for employee code generation)
+// ────────────────────────────────────────────────────────────
+
+model GlobalSequence {
+  id        Int @id @default(1)
+  nextValue Int @default(1)
+
+  @@map("global_sequences")
+}
+
+// ────────────────────────────────────────────────────────────
+// RECOGNITION & KUDOS
+// ────────────────────────────────────────────────────────────
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  icon        String
+  description String?
+  isActive    Boolean  @default(true)
+  
+  recognitions Recognition[]
+
+  @@map("badges")
+}
+
+model Recognition {
+  id           String   @id @default(uuid())
+  senderId     String
+  receiverId   String
+  badgeId      String
+  message      String
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  sender       Employee @relation("RecognitionsGiven", fields: [senderId], references: [id])
+  receiver     Employee @relation("RecognitionsReceived", fields: [receiverId], references: [id])
+  badge        Badge    @relation(fields: [badgeId], references: [id])
+
+  @@map("recognitions")
+}

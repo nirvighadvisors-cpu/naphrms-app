@@ -1,0 +1,1 @@
+export const EMERGENCY_CONTACT_RELATIONS = ['FATHER', 'MOTHER', 'SPOUSE', 'SIBLING', 'FRIEND', 'OTHER'] as const;

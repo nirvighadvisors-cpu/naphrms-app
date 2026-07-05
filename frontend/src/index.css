@@ -1,0 +1,167 @@
+/* ============================================================ */
+/* NAP HRMS — Global Styles & Design Tokens                 */
+/* ============================================================ */
+
+/* Fontshare CDN — Satoshi + General Sans */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@500,700&f[]=general-sans@400,500,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties ─────────────────────────────────── */
+@layer base {
+  :root {
+    /* Primary */
+    --color-primary: #01696f; /* Teal green */
+    --color-primary-hover: #0c4e54;
+    --color-primary-active: #0f3638;
+
+    /* Backgrounds */
+    --color-bg: #121212; /* Matte black */
+    --color-surface: #1e1e1e; /* Dark gray for cards */
+    --color-surface-offset: #2c2c2c;
+
+    /* Semantic */
+    --color-success: #437a22;
+    --color-error: #a12c7b;
+    --color-warning: #964219;
+    --color-info: #006494;
+
+    /* Text */
+    --color-text: #ffffff; /* White */
+    --color-text-muted: #a1a1aa;
+
+    /* Borders — subtle, not harsh gray */
+    --color-border: rgba(255, 255, 255, 0.12);
+
+    /* Shadows */
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-elevated: 0 2px 4px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.5);
+    --shadow-modal: 0 4px 8px rgba(0,0,0,0.5), 0 16px 48px rgba(0,0,0,0.6);
+
+    /* Transitions */
+    --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+  }
+
+  /* ── Dark Mode ─────────────────────────────────────────── */
+  [data-theme='dark'] {
+    --color-bg: #171614;
+    --color-surface: #1c1b19;
+    --color-surface-offset: #242320;
+    --color-text: #cdccca;
+    --color-text-muted: #797876;
+    --color-border: oklch(from #cdccca l c h / 0.12);
+    --shadow-card: 0 1px 2px oklch(0.05 0.01 80 / 0.3), 0 4px 12px oklch(0.05 0.01 80 / 0.4);
+    --shadow-elevated: 0 2px 4px oklch(0.05 0.01 80 / 0.4), 0 8px 24px oklch(0.05 0.01 80 / 0.5);
+  }
+
+  /* ── Base Styles ─────────────────────────────────────── */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'General Sans', system-ui, -apple-system, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
+    line-height: 1.2;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-text-muted);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-text);
+  }
+}
+
+/* ── Utility Classes ──────────────────────────────────────── */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide scrollbar but keep scroll functionality */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile-safe touch scrolling */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent text selection on interactive elements (mobile) */
+  .select-none-touch {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* ── Safe Area Insets (Notched Devices) ──────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* ── Mobile Touch Target Minimum ─────────────────────────── */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* But don't bloat tiny inline icon buttons */
+  button[data-compact], .compact-btn {
+    min-height: unset;
+    min-width: unset;
+  }
+}
+
+/* ── Google Places Autocomplete ──────────────────────────── */
+/* Ensure the dropdown renders above Radix Dialog overlay (z-50) */
+.pac-container {
+  z-index: 9999 !important;
+}
