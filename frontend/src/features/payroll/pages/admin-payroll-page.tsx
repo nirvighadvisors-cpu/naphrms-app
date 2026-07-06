@@ -1005,7 +1005,7 @@ export function AdminPayrollPage() {
         <TabsContent value="structures" className="mt-6 flex-1 focus-visible:outline-none focus-visible:ring-0">
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-section-title text-text font-display flex items-center gap-2">
                   <Layers className="h-5 w-5 text-primary" />
@@ -1013,7 +1013,7 @@ export function AdminPayrollPage() {
                 </h2>
                 <p className="text-sm text-text-muted mt-1">Define compensation packages with earnings and deductions</p>
               </div>
-              <Button onClick={() => setCreateOpen(true)}>
+              <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-1" />
                 Create Structure
               </Button>

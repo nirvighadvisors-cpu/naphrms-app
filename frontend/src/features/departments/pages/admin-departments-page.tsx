@@ -193,13 +193,13 @@ export function AdminDepartmentsPage() {
               {parentDepts.map((dept) => (
                 <div key={dept.id}>
                   {/* Parent Row */}
-                  <div className="p-4 flex justify-between items-center hover:bg-surface/50 bg-background transition-colors">
+                  <div className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-surface/50 bg-background transition-colors">
                     <div>
                       <h4 className="font-bold text-text text-lg">{dept.name}</h4>
                       <p className="text-xs text-text-muted">Code: {dept.code || 'N/A'} • Prefix: {dept.codeInitial} • Employees: {dept.employeeCount}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Button variant="ghost" size="sm" onClick={() => toggleDept(dept.id)} className="text-text-muted hover:text-primary">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <Button variant="ghost" size="sm" onClick={() => toggleDept(dept.id)} className="text-text-muted hover:text-primary flex-1 sm:flex-none justify-center">
                         <Users className="w-4 h-4 mr-2" />
                         Employees
                         {expandedDepts[dept.id] ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
@@ -219,16 +219,16 @@ export function AdminDepartmentsPage() {
                     <div className="bg-surface/30 pl-8 divide-y divide-border/50 border-t border-border/50">
                       {dept.children.map(child => (
                         <div key={child.id} className="flex flex-col">
-                          <div className="p-3 flex justify-between items-center hover:bg-surface/80 transition-colors">
+                          <div className="p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-surface/80 transition-colors">
                              <div className="flex items-center gap-2">
-                               <div className="w-4 h-px bg-border"></div>
+                               <div className="w-4 h-px bg-border hidden sm:block"></div>
                                <div>
                                  <h5 className="font-medium text-text text-sm">{child.name}</h5>
                                  <p className="text-xs text-text-muted">Code: {child.code || 'N/A'} • Prefix: {child.codeInitial}</p>
                                </div>
                              </div>
-                             <div className="flex items-center gap-2">
-                               <Button variant="ghost" size="sm" onClick={() => toggleDept(child.id)} className="h-8 px-2 text-xs text-text-muted hover:text-primary">
+                             <div className="flex items-center gap-2 w-full sm:w-auto">
+                               <Button variant="ghost" size="sm" onClick={() => toggleDept(child.id)} className="h-8 px-2 text-xs text-text-muted hover:text-primary flex-1 sm:flex-none justify-center">
                                  <Users className="w-3 h-3 mr-1" />
                                  Employees
                                  {expandedDepts[child.id] ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}

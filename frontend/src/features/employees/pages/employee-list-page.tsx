@@ -63,7 +63,7 @@ export const EmployeeListPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => handleStatusChange(tab.id)}
-              className={`pb-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`pb-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                 status === tab.id 
                   ? 'border-primary text-primary' 
                   : 'border-transparent text-text-muted hover:text-text hover:border-border'
