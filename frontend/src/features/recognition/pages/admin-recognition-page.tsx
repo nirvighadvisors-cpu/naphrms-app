@@ -30,12 +30,14 @@ export function AdminRecognitionPage() {
         </TabsList>
 
         <TabsContent value="badges" className="mt-6 space-y-6 flex-1 focus-visible:outline-none">
-          <div className="flex justify-between items-center bg-surface p-4 rounded-xl border border-border shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface p-4 rounded-xl border border-border shadow-sm">
             <div>
               <h3 className="font-semibold text-text">Badges Library</h3>
               <p className="text-sm text-text-muted">Configure badges that employees can send to each other.</p>
             </div>
-            <BadgeDialog />
+            <div className="w-full sm:w-auto flex">
+              <BadgeDialog />
+            </div>
           </div>
 
           {badgesLoading ? (
@@ -135,7 +137,7 @@ function BadgeDialog({ badge }: { badge?: any }) {
         {badge ? (
           <Button variant="ghost" size="icon" className="h-8 w-8 text-text-muted hover:text-text"><Edit2 className="w-4 h-4" /></Button>
         ) : (
-          <Button><Plus className="w-4 h-4 mr-2" /> Add Badge</Button>
+          <Button className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" /> Add Badge</Button>
         )}
       </DialogTrigger>
       <DialogContent>

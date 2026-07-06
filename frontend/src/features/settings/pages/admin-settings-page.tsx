@@ -53,7 +53,7 @@ export function AdminSettingsPage() {
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 shrink-0">
         <h1 className="text-page-title font-display text-text mb-6">Settings</h1>
-        <nav className="flex flex-col space-y-1">
+        <nav className="flex flex-row md:flex-col gap-2 md:gap-0 md:space-y-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -61,13 +61,13 @@ export function AdminSettingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                   isActive 
                     ? 'bg-primary text-white shadow-md' 
                     : 'text-text-muted hover:bg-surface hover:text-text'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-5 h-5 flex-shrink-0" />
                 {tab.label}
               </button>
             );
@@ -250,9 +250,9 @@ function DepartmentsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex sm:justify-end">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Department</Button>
+          <Button className="w-full sm:w-auto" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Department</Button>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingDept ? 'Edit Department' : 'Create Department'}</DialogTitle>
@@ -523,9 +523,9 @@ function WorkSitesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex sm:justify-end">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Work Site</Button>
+          <Button className="w-full sm:w-auto" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Work Site</Button>
           <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[90vh] overflow-y-auto" onInteractOutside={handleInteractOutside}>
             <DialogHeader>
               <DialogTitle>{editingSite ? 'Edit Work Site' : 'Create Work Site'}</DialogTitle>
@@ -636,7 +636,7 @@ function WorkSitesTab() {
           ) : (
             <div className="divide-y divide-border">
               {worksites.map((site) => (
-                <div key={site.id} className="p-4 flex justify-between items-center hover:bg-surface/50">
+                <div key={site.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-surface/50">
                   <div className="flex gap-4 items-start">
                     <div className="mt-1 w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                       <MapPin className="w-5 h-5" />
@@ -658,8 +658,8 @@ function WorkSitesTab() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(site as any)}>Edit</Button>
+                  <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0 border-t sm:border-0 border-border/50 pt-3 sm:pt-0">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleEdit(site as any)}>Edit</Button>
                     <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(site.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -872,9 +872,9 @@ function LeavesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex sm:justify-end">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Leave Type</Button>
+          <Button className="w-full sm:w-auto" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Leave Type</Button>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingLeave ? 'Edit Leave Type' : 'Create Leave Type'}</DialogTitle>
@@ -953,7 +953,7 @@ function LeavesTab() {
           ) : (
             <div className="divide-y divide-border">
               {leaveTypes.map((leave) => (
-                <div key={leave.id} className="p-4 flex justify-between items-center hover:bg-surface/50">
+                <div key={leave.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-surface/50">
                   <div className="flex gap-4 items-start">
                     <div className="w-12 h-12 rounded-lg bg-surface border border-border flex flex-col items-center justify-center shrink-0">
                       <span className="text-xl font-bold text-text leading-tight">{leave.maxDaysPerYear}</span>
@@ -978,8 +978,8 @@ function LeavesTab() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(leave)}>Edit</Button>
+                  <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0 border-t sm:border-0 border-border/50 pt-3 sm:pt-0">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleEdit(leave)}>Edit</Button>
                     <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(leave.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -1060,14 +1060,14 @@ function HolidaysTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div className="flex items-center gap-2 justify-center sm:justify-start">
           <Button variant="outline" onClick={() => setYear(y => y - 1)}>&lt;</Button>
           <span className="font-bold text-lg">{year}</span>
           <Button variant="outline" onClick={() => setYear(y => y + 1)}>&gt;</Button>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Holiday</Button>
+          <Button className="w-full sm:w-auto" onClick={handleAdd}><Plus className="w-4 h-4 mr-2" /> Add Holiday</Button>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingHoliday ? 'Edit Holiday' : 'Create Holiday'}</DialogTitle>
@@ -1107,7 +1107,7 @@ function HolidaysTab() {
           ) : (
             <div className="divide-y divide-border">
               {holidays.map((holiday) => (
-                <div key={holiday.id} className="p-4 flex justify-between items-center hover:bg-surface/50">
+                <div key={holiday.id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-surface/50">
                   <div className="flex gap-4 items-start">
                     <div className="w-12 h-12 rounded-lg bg-surface border border-border flex flex-col items-center justify-center shrink-0">
                       <span className="text-[10px] font-bold text-primary uppercase leading-none">
@@ -1132,8 +1132,8 @@ function HolidaysTab() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(holiday)}>Edit</Button>
+                  <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0 border-t sm:border-0 border-border/50 pt-3 sm:pt-0">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleEdit(holiday)}>Edit</Button>
                     <Button variant="ghost" size="sm" className="text-rose-500 hover:text-rose-600 hover:bg-rose-50" onClick={() => handleDelete(holiday.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
