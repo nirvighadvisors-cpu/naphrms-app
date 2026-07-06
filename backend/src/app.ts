@@ -55,7 +55,18 @@ app.use(helmet({
 }));
 app.use(
   cors({
-    origin: config.frontendUrl,
+    origin: (origin, callback) => {
+      const allowed = [
+        config.frontendUrl,
+        'https://naphrms-app.vercel.app',
+      ];
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin || allowed.some(u => origin.startsWith(u.replace(/\/$/, '')))) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all origins temporarily during deployment
+      }
+    },
     credentials: true, // Allow cookies
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
