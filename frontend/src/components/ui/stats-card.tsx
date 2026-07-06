@@ -24,7 +24,7 @@ export function StatsCard({ title, value, icon, delta, trend, description, class
     : delta;
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
+    <Card className={cn('overflow-hidden h-full flex flex-col justify-center', className)}>
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3 sm:gap-4">
           <div className="flex-1 min-w-0">

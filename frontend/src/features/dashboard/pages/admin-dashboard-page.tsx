@@ -64,7 +64,7 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <Link to="/admin/employees" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+        <Link to="/admin/employees" className="block h-full transition-transform hover:scale-[1.02] active:scale-[0.98]">
           <StatsCard
             title="Total Employees"
             value={stats?.totalEmployees || 0}
@@ -73,7 +73,7 @@ export const AdminDashboardPage: React.FC = () => {
             trend="up"
           />
         </Link>
-        <Link to="/admin/employees" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+        <Link to="/admin/employees" className="block h-full transition-transform hover:scale-[1.02] active:scale-[0.98]">
           <StatsCard
             title="New Hires"
             value={stats?.newHiresThisMonth || 0}
@@ -81,7 +81,7 @@ export const AdminDashboardPage: React.FC = () => {
             description="Joined this month"
           />
         </Link>
-        <Link to="/admin/departments" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+        <Link to="/admin/departments" className="block h-full transition-transform hover:scale-[1.02] active:scale-[0.98]">
           <StatsCard
             title="Departments"
             value={stats?.totalDepartments || 0}
@@ -167,16 +167,16 @@ export const AdminDashboardPage: React.FC = () => {
               <CardDescription>Headcount distribution</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px] sm:h-[250px] mt-3 sm:mt-4">
+              <div className="h-[250px] mt-3 sm:mt-4">
                 {stats?.departmentBreakdown && stats.departmentBreakdown.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={stats.departmentBreakdown}
                         cx="50%"
-                        cy="45%"
-                        innerRadius={60}
-                        outerRadius={80}
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={75}
                         paddingAngle={5}
                         dataKey="count"
                         nameKey="department"
