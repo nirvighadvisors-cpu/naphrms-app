@@ -153,7 +153,7 @@ export function EmployeeExpensePage() {
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-primary to-primary-light hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95">
+            <Button className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary-light hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95">
               <Plus className="w-4 h-4 mr-2" />
               New Claim
             </Button>

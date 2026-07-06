@@ -154,7 +154,7 @@ export function AdminDocumentsPage() {
 
       {activeTab === 'policies' ? (
         <Card className="bg-surface border-border">
-          <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 pb-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
             <div className="space-y-1">
               <CardTitle>Company Policies</CardTitle>
               <CardDescription>Publish and manage global documents visible to all employees</CardDescription>
@@ -170,7 +170,7 @@ export function AdminDocumentsPage() {
               }
             }}>
               <DialogTrigger asChild>
-                <Button className="shrink-0 gap-2" onClick={() => {
+                <Button className="shrink-0 gap-2 w-full sm:w-auto" onClick={() => {
                   setPolicyToReplace(null);
                   policyForm.reset();
                 }}><Plus className="w-4 h-4" /> Publish Policy</Button>

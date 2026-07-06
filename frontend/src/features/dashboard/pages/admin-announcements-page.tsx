@@ -115,12 +115,12 @@ export function AdminAnnouncementsPage() {
   return (
     <div className="h-full flex flex-col space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-text">Announcements</h1>
           <p className="text-text-muted mt-1">Create and manage company-wide announcements</p>
         </div>
-        <Button onClick={openCreate} className="bg-primary text-white">
+        <Button onClick={openCreate} className="bg-primary text-white w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           New Announcement
         </Button>

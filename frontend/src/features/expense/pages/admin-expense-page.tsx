@@ -155,7 +155,7 @@ export function AdminExpensePage() {
       </div>
 
       {/* Main Content */}
-      <Card className="bg-surface border-border">
+      <Card className="bg-surface border-border overflow-hidden">
         <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4">
           <div>
             <CardTitle>Reimbursement Claims</CardTitle>
@@ -180,7 +180,7 @@ export function AdminExpensePage() {
           </div>
         </CardHeader>
         
-        <div className="overflow-x-auto scroll-touch scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="overflow-x-auto scroll-touch scrollbar-none">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="text-xs text-text-muted uppercase bg-background/50 border-y border-border">
               <tr>
