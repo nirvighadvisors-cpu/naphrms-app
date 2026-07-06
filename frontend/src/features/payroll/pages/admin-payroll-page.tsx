@@ -401,7 +401,7 @@ function StructureDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-[1000px] w-[90vw] overflow-y-auto">
-        <SheetHeader className="mb-6">
+        <SheetHeader className="mb-6 pr-6">
           <SheetTitle className="flex items-center gap-2 text-text">
             <Layers className="h-5 w-5 text-primary" />
             {structure?.name || 'Loading...'}
@@ -419,8 +419,8 @@ function StructureDetailSheet({
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
           </div>
         ) : structure ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+            <div className="space-y-6 min-w-0">
               {/* Components Table */}
               <div>
                 <h3 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
@@ -626,7 +626,7 @@ function StructureDetailSheet({
             </div>
 
             {/* Live Preview Panel */}
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0">
               <SalaryPreview 
                 structureId={structure.id} 
                 basicSalary={basicSalary} 
