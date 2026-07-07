@@ -692,7 +692,9 @@ export const completeOnboarding = async (req: Request, res: Response): Promise<v
         const department = await tx.department.findUnique({ where: { id: employee.departmentId } });
         const codeInitial = department?.codeInitial || 'X';
         
-        finalEmployeeCode = `NAP${codeInitial}-${current.toString().padStart(4, '0')}`;
+        // finalEmployeeCode = `NAP${codeInitial}-${current.toString().padStart(4, '0')}`;
+        // Changed to use NAP- directly as requested by the user
+        finalEmployeeCode = `NAP-${current.toString().padStart(4, '0')}`;
       }
 
       const completedAt = new Date();
