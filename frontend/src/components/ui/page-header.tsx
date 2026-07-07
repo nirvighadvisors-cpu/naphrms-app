@@ -35,7 +35,7 @@ export function PageHeader({
                   {crumb.href && !isLast ? (
                     <Link
                       to={crumb.href}
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-primary transition-colors flex items-center h-full"
                     >
                       {crumb.label}
                     </Link>
