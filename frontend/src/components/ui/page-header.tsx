@@ -27,11 +27,11 @@ export function PageHeader({
     <div className={cn('flex flex-col gap-3 sm:gap-4 md:flex-row md:items-start md:justify-between mb-6 sm:mb-8', className)}>
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav className="flex items-center overflow-x-auto whitespace-nowrap scrollbar-none gap-1 text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2 pb-1">
+          <nav className="flex flex-row flex-nowrap items-center overflow-x-auto whitespace-nowrap scrollbar-none gap-1 text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2 pb-1">
             {breadcrumbs.map((crumb, index) => {
               const isLast = index === breadcrumbs.length - 1;
               return (
-                <div key={crumb.label} className="flex items-center">
+                <div key={crumb.label} className="flex flex-row items-center whitespace-nowrap flex-shrink-0">
                   {crumb.href && !isLast ? (
                     <Link
                       to={crumb.href}
