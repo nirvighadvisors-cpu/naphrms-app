@@ -62,7 +62,7 @@ export const createHoliday = async (req: Request, res: Response): Promise<void> 
   // Notify all active employees about new holiday
   try {
     const employees = await prisma.employee.findMany({
-      where: { status: 'ACTIVE', userId: { not: null } },
+      where: { status: 'ACTIVE' },
       select: { userId: true },
     });
     const userIds = employees.map(e => e.userId).filter(Boolean) as string[];

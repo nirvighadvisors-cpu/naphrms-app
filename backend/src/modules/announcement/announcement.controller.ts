@@ -61,7 +61,7 @@ export const createAnnouncement = async (req: Request, res: Response): Promise<v
 // ── Admin: Update Announcement ──────────────────────────────
 export const updateAnnouncement = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { title, content, priority, targetDepartmentId, expiresAt, isActive } = req.body;
 
     const existing = await prisma.announcement.findUnique({ where: { id } });
@@ -96,7 +96,7 @@ export const updateAnnouncement = async (req: Request, res: Response): Promise<v
 // ── Admin: Delete Announcement ──────────────────────────────
 export const deleteAnnouncement = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await prisma.announcement.delete({ where: { id } });
     res.json({ data: { message: 'Announcement deleted successfully' } });
   } catch (error: any) {
@@ -182,7 +182,7 @@ export const getActiveAnnouncements = async (req: Request, res: Response): Promi
 // ── Employee: Mark Announcement as Read ─────────────────────
 export const markAnnouncementRead = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user!.userId;
 
     await prisma.announcementRead.upsert({

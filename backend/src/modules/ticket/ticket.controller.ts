@@ -84,7 +84,7 @@ export const getMyTickets = async (req: Request, res: Response) => {
 
 export const getTicketDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.userId;
     const role = req.user?.role;
 
@@ -142,7 +142,7 @@ export const getTicketDetails = async (req: Request, res: Response) => {
 
 export const addComment = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.userId;
     const role = req.user?.role;
     const { content, isInternal } = req.body;
@@ -208,7 +208,7 @@ export const getAllTickets = async (req: Request, res: Response) => {
 
 export const updateTicketStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status } = req.body;
 
     const updateData: any = { status };
@@ -251,7 +251,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
 
 export const assignTicket = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { assignedToId } = req.body; // User ID of admin/hr
 
     const ticket = await prisma.ticket.update({

@@ -22,7 +22,7 @@ const createPolicySchema = z.object({
   description: z.string().optional(),
   fileUrl: z.string().min(1, 'Please select a file'),
   version: z.string().min(1, 'Version is required'),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 export function AdminDocumentsPage() {

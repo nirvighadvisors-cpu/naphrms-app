@@ -122,7 +122,7 @@ export const getActiveSurveys = async (req: Request, res: Response) => {
 
 export const getSurveyDetails = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const survey = await prisma.survey.findUnique({
       where: { id },
@@ -146,7 +146,7 @@ export const getSurveyDetails = async (req: Request, res: Response) => {
 
 export const submitSurvey = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = req.user?.userId;
     const { answers } = req.body; // Array of { questionId, textValue, numberValue, optionValue }
 
@@ -196,7 +196,7 @@ export const submitSurvey = async (req: Request, res: Response) => {
 
 export const getSurveyResponses = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const responses = await prisma.surveyResponse.findMany({
       where: { surveyId: id },

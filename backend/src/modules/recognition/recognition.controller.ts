@@ -37,7 +37,7 @@ export const createBadge = async (req: Request, res: Response): Promise<void> =>
 
 // ── PATCH /api/recognition/badges/:id (admin) ───────────────
 export const updateBadge = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = updateBadgeSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid input', details: parsed.error.flatten() } });
