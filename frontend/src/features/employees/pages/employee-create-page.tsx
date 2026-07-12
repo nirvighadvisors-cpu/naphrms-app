@@ -67,7 +67,7 @@ export const EmployeeCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const { mutate: createEmployee, isPending } = useCreateEmployee();
   const { data: departments, isLoading: isDeptsLoading } = useDepartments();
-  const { data: employeesData, isLoading: isEmpsLoading } = useEmployees({ limit: 100 }); 
+  const { data: employeesData, isLoading: isEmpsLoading } = useEmployees({ limit: 1000, status: 'ACTIVE' }); 
   const { data: worksites, isLoading: isWorksitesLoading } = useWorksites();
   
   const [step, setStep] = React.useState(1);

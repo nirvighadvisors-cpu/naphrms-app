@@ -112,7 +112,7 @@ export const EmployeeEditPage: React.FC = () => {
   const { data: employee, isLoading: isEmployeeLoading } = useEmployee(id!);
   const { mutate: updateEmployee, isPending } = useUpdateEmployee();
   const { data: departments, isLoading: isDeptsLoading } = useDepartments();
-  const { data: employeesData, isLoading: isEmpsLoading } = useEmployees({ limit: 100 }); 
+  const { data: employeesData, isLoading: isEmpsLoading } = useEmployees({ limit: 1000, status: 'ACTIVE' }); 
   const { data: worksites, isLoading: isWorksitesLoading } = useWorksites();
   
   const form = useForm<FormValues>({
