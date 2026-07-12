@@ -19,6 +19,7 @@ import {
   changeEmployeeStatus,
   finalizeOffer,
   getOfferLetterUrls,
+  resendInvitation,
 } from './employee.controller';
 
 const router = Router();
@@ -42,5 +43,7 @@ router.patch('/:id/status', requirePermission(PERMISSIONS.EMPLOYEE_TERMINATE), a
 router.patch('/:id/finalize-offer', requirePermission(PERMISSIONS.EMPLOYEE_EDIT_ALL), upload.single('file'), auditAction('OFFER_FINALIZED', 'Employee'), finalizeOffer);
 router.get('/:id/history', requirePermission(PERMISSIONS.EMPLOYEE_VIEW_ALL), getEmployeeHistory);
 router.get('/:id/offer-letter-urls', requirePermission(PERMISSIONS.EMPLOYEE_VIEW_ALL), getOfferLetterUrls);
+router.post('/:id/resend-invite', requirePermission(PERMISSIONS.EMPLOYEE_EDIT_ALL), auditAction('INVITE_RESENT', 'Employee'), resendInvitation);
+
 
 export default router;
