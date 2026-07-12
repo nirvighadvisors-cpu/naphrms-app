@@ -36,7 +36,7 @@ export const config = {
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:hr@nirvighadvisors.com',
 
   // App
-  appUrl: process.env.APP_URL || 'http://localhost:5173',
+  appUrl: process.env.APP_URL || process.env.FRONTEND_URL || 'http://localhost:5173',
   inviteTokenExpiryHours: 72,
   maxLoginAttempts: 5,
   lockoutDurationMinutes: 30,
