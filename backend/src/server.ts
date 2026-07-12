@@ -39,6 +39,21 @@ async function main() {
 
   // Start server
   httpServer.listen(config.port, () => {
+    // Self-ping to prevent Render from sleeping (if on free tier)
+    if (config.renderExternalUrl) {
+      console.log(`⏱️ Setting up Render self-ping every 14 minutes for: ${config.renderExternalUrl}`);
+      setInterval(() => {
+        http.get(`${config.renderExternalUrl}/api/health`, (res) => {
+          if (res.statusCode === 200) {
+            console.log('✅ Render self-ping successful.');
+          } else {
+            console.log(`⚠️ Render self-ping failed with status: ${res.statusCode}`);
+          }
+        }).on('error', (err) => {
+          console.log(`❌ Render self-ping error: ${err.message}`);
+        });
+      }, 14 * 60 * 1000); // 14 minutes
+    }
     console.log(`
 ╔══════════════════════════════════════════════╗
 ║          NAP HRMS — API SERVER           ║

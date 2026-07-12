@@ -42,8 +42,8 @@ export const config = {
   lockoutDurationMinutes: 30,
   bcryptSaltRounds: 12,
 
-  // Cookie (production cross-subdomain support)
-  cookieDomain: process.env.COOKIE_DOMAIN || '',
+  // Render self-ping
+  renderExternalUrl: process.env.RENDER_EXTERNAL_URL || '',
 } as const;
 
 // Validate required env vars on startup
