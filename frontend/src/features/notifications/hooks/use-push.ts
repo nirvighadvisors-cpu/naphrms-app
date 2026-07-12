@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import apiClient from '@/lib/api-client';
 
 /**
@@ -14,6 +14,8 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+
   // Check existing subscription on mount
   useEffect(() => {
     checkExistingSubscription();
@@ -21,7 +23,7 @@ export function usePushNotifications() {
 
   async function checkExistingSubscription() {
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      if (!isSupported) return;
 
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -32,10 +34,11 @@ export function usePushNotifications() {
   }
 
   /**
-   * Request notification permission and subscribe to push.
+   * Subscribe to push — requests permission if needed.
+   * Returns true if successfully subscribed.
    */
-  async function subscribeToPush() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+  const subscribeToPush = useCallback(async () => {
+    if (!isSupported) {
       console.warn('[Push] Push notifications are not supported in this browser');
       return false;
     }
@@ -93,7 +96,50 @@ export function usePushNotifications() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [isSupported]);
+
+  /**
+   * Silently subscribe if permission is already granted.
+   * Called automatically on login to handle returning users and new devices.
+   */
+  const autoSubscribe = useCallback(async () => {
+    if (!isSupported) return;
+
+    try {
+      const currentPerm = Notification.permission;
+      setPermission(currentPerm);
+
+      if (currentPerm === 'granted') {
+        // Permission already granted — ensure we have an active subscription
+        const registration = await navigator.serviceWorker.ready;
+        const existingSub = await registration.pushManager.getSubscription();
+
+        if (existingSub) {
+          // Already subscribed — just make sure backend knows about it
+          const subJSON = existingSub.toJSON();
+          try {
+            await apiClient.post('/push/subscribe', {
+              endpoint: subJSON.endpoint,
+              keys: {
+                p256dh: subJSON.keys?.p256dh,
+                auth: subJSON.keys?.auth,
+              },
+            });
+          } catch {
+            // Backend might already have it, that's fine
+          }
+          setIsSubscribed(true);
+        } else {
+          // Permission granted but no subscription — create one
+          await subscribeToPush();
+        }
+      }
+      // If permission is 'default', we don't prompt automatically —
+      // we let the UI banner handle the first prompt
+    } catch (err) {
+      console.warn('[Push] Auto-subscribe check failed:', err);
+    }
+  }, [isSupported, subscribeToPush]);
 
   /**
    * Unsubscribe from push notifications.
@@ -123,9 +169,10 @@ export function usePushNotifications() {
     permission,
     isSubscribed,
     isLoading,
+    isSupported,
     subscribeToPush,
     unsubscribeFromPush,
-    isSupported: typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window,
+    autoSubscribe,
   };
 }
 

@@ -50,10 +50,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               size="sm"
               onClick={subscribeToPush}
               disabled={isLoading}
-              className="hidden md:flex text-xs h-8 border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
+              className="flex text-xs h-8 border-primary/30 text-primary hover:bg-primary hover:text-white transition-colors"
             >
               <Bell className="h-3 w-3 mr-1.5" />
-              {isLoading ? 'Enabling...' : 'Enable Notifications'}
+              <span className="hidden sm:inline">{isLoading ? 'Enabling...' : 'Enable Notifications'}</span>
+              <span className="sm:hidden">{isLoading ? '...' : 'Notify'}</span>
             </Button>
           )}
 

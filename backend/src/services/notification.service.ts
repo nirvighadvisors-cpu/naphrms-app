@@ -193,7 +193,7 @@ async function sendWebPushToUser(userId: string, payload: any) {
     return; // Web Push not configured
   }
 
-  const subscriptions: any[] = await (prisma as any).pushSubscription.findMany({
+  const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId },
   });
 
@@ -202,22 +202,22 @@ async function sendWebPushToUser(userId: string, payload: any) {
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {
       try {
-        const keys = sub.keys as { p256dh: string; auth: string };
         await webpush.sendNotification(
           {
             endpoint: sub.endpoint,
             keys: {
-              p256dh: keys.p256dh,
-              auth: keys.auth,
+              p256dh: sub.p256dh,
+              auth: sub.auth,
             },
           },
           JSON.stringify(payload)
         );
+        console.log(`[Push] Sent to user ${userId} on ${sub.endpoint.slice(0, 50)}...`);
       } catch (error: any) {
         // If subscription is expired or invalid (410 Gone, 404 Not Found), remove it
         if (error.statusCode === 410 || error.statusCode === 404) {
           console.log(`[Push] Removing expired subscription for user ${userId}: ${sub.endpoint.slice(0, 50)}...`);
-          await (prisma as any).pushSubscription.delete({ where: { id: sub.id } });
+          await prisma.pushSubscription.delete({ where: { id: sub.id } });
         } else {
           console.error(`[Push] Failed to send to user ${userId}:`, error.message);
         }
