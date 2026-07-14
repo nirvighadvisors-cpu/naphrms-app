@@ -41,18 +41,27 @@ async function main() {
   httpServer.listen(config.port, () => {
     // Self-ping to prevent Render from sleeping (if on free tier)
     if (config.renderExternalUrl) {
-      console.log(`⏱️ Setting up Render self-ping every 14 minutes for: ${config.renderExternalUrl}`);
-      setInterval(() => {
-        http.get(`${config.renderExternalUrl}/api/health`, (res) => {
+      const pingUrl = `${config.renderExternalUrl}/api/health`;
+      const pingModule = pingUrl.startsWith('https') ? require('https') : http;
+      console.log(`⏱️ Setting up Render self-ping every 14 minutes for: ${pingUrl}`);
+      
+      const doPing = () => {
+        pingModule.get(pingUrl, (res: any) => {
           if (res.statusCode === 200) {
-            console.log('✅ Render self-ping successful.');
+            console.log(`✅ Render self-ping successful at ${new Date().toISOString()}`);
           } else {
             console.log(`⚠️ Render self-ping failed with status: ${res.statusCode}`);
           }
-        }).on('error', (err) => {
+          res.resume(); // consume response data to free up memory
+        }).on('error', (err: any) => {
           console.log(`❌ Render self-ping error: ${err.message}`);
         });
-      }, 14 * 60 * 1000); // 14 minutes
+      };
+
+      // Immediate first ping after 30 seconds (let server fully start)
+      setTimeout(doPing, 30 * 1000);
+      // Then every 14 minutes
+      setInterval(doPing, 14 * 60 * 1000);
     }
     console.log(`
 ╔══════════════════════════════════════════════╗
