@@ -37,8 +37,6 @@ const STEPS = [
   { id: 3, label: 'Bank', icon: Landmark },
   { id: 4, label: 'Documents', icon: FileText },
   { id: 5, label: 'E-Sign', icon: FileSignature },
-  { id: 6, label: 'Offer Details', icon: ScrollText },
-  { id: 7, label: 'Review', icon: ClipboardCheck },
 ];
 
 // ── Schemas ───────────────────────────────────────────────────
@@ -109,7 +107,7 @@ export function OnboardingPage() {
   // Navigate to saved step
   useEffect(() => {
     if (status && status.onboardingStep > 0) {
-      setCurrentStep(Math.min(status.onboardingStep, 7));
+      setCurrentStep(Math.min(status.onboardingStep, 5));
     }
   }, [status]);
 
@@ -167,9 +165,7 @@ export function OnboardingPage() {
         {currentStep === 2 && <EmergencyStep onNext={() => setCurrentStep(3)} onBack={() => setCurrentStep(1)} />}
         {currentStep === 3 && <BankStep onNext={() => setCurrentStep(4)} onBack={() => setCurrentStep(2)} />}
         {currentStep === 4 && <DocumentsStep onNext={() => setCurrentStep(5)} onBack={() => setCurrentStep(3)} status={status} />}
-        {currentStep === 5 && <ESignStep onNext={() => setCurrentStep(6)} onBack={() => setCurrentStep(4)} status={status} />}
-        {currentStep === 6 && <OfferLetterDetailsStep onNext={() => setCurrentStep(7)} onBack={() => setCurrentStep(5)} status={status} />}
-        {currentStep === 7 && <ReviewStep onBack={() => setCurrentStep(6)} />}
+        {currentStep === 5 && <ESignStep onNext={() => {}} onBack={() => setCurrentStep(4)} status={status} />}
       </div>
     </div>
   );
@@ -183,8 +179,6 @@ function isStepComplete(status: OnboardingStatus, step: number): boolean {
     case 3: return status.bankDetailsDone;
     case 4: return status.documentsDone;
     case 5: return status.offerSigned;
-    case 6: return status.offerDetailsDone;
-    case 7: return status.isProfileComplete;
     default: return false;
   }
 }
@@ -723,8 +717,12 @@ function DocumentsStep({ onNext, onBack, status }: { onNext: () => void; onBack:
 
 // ── Step 6: E-Sign ────────────────────────────────────────────
 function ESignStep({ onNext, onBack, status }: { onNext: () => void; onBack: () => void; status: any }) {
+  const navigate = useNavigate();
+  const { setUser, user } = useAuthStore();
+  const { toast } = useToast();
   const uploadMutation = useUploadDocument();
   const signMutation = useSignOffer();
+  const completeMutation = useCompleteOnboarding();
   const [signatureUploaded, setSignatureUploaded] = useState(false);
   const [signaturePath, setSignaturePath] = useState('');
   const [signatureUrl, setSignatureUrl] = useState('');
@@ -764,8 +762,28 @@ function ESignStep({ onNext, onBack, status }: { onNext: () => void; onBack: () 
         policyAccepted: policyAccepted,
       }, { 
         onSuccess: () => {
-          setIsGenerating(false);
-          onNext();
+          // After E-Sign, auto-complete onboarding and redirect to dashboard
+          completeMutation.mutate(undefined, {
+            onSuccess: () => {
+              setIsGenerating(false);
+              toast({
+                title: '🎉 Onboarding Submitted!',
+                description: 'HR will provide your offer letter shortly. Your account is now active.',
+              });
+              if (user) {
+                setUser({ ...user, isProfileComplete: true });
+              }
+              navigate('/employee/dashboard', { replace: true });
+            },
+            onError: () => {
+              setIsGenerating(false);
+              toast({
+                title: 'Error',
+                description: 'Failed to complete onboarding. Please try again.',
+                variant: 'destructive',
+              });
+            },
+          });
         },
         onError: () => setIsGenerating(false)
       });
