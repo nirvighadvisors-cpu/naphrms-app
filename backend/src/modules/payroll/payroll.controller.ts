@@ -347,13 +347,7 @@ export const assignStructure = async (req: Request, res: Response): Promise<void
   }
 
   try {
-    const { employeeId, employeeIds, structureId, basicSalary } = parsed.data;
-
-    const targetIds = employeeIds || (employeeId ? [employeeId] : []);
-    if (targetIds.length === 0) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'No employees provided' } });
-      return;
-    }
+    const { employeeId, employeeIds, structureId, basicSalary, assignments } = parsed.data;
 
     const structure = await prisma.salaryStructure.findUnique({ where: { id: structureId } });
     if (!structure) {
@@ -361,12 +355,28 @@ export const assignStructure = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    // Build assignment list: support both old format and new assignments[] format
+    let assignmentList: { employeeId: string; basicSalary: number }[] = [];
+
+    if (assignments && assignments.length > 0) {
+      // New format: per-employee basic pay
+      assignmentList = assignments;
+    } else {
+      // Legacy format: single basicSalary for all
+      const targetIds = employeeIds || (employeeId ? [employeeId] : []);
+      if (targetIds.length === 0) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'No employees provided' } });
+        return;
+      }
+      assignmentList = targetIds.map(id => ({ employeeId: id, basicSalary: basicSalary || 0 }));
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const updatedEmployees = [];
-      for (const id of targetIds) {
+      for (const assignment of assignmentList) {
         const updated = await tx.employee.update({
-          where: { id },
-          data: { salaryStructureId: structureId, basicSalary },
+          where: { id: assignment.employeeId },
+          data: { salaryStructureId: structureId, basicSalary: assignment.basicSalary },
           select: {
             id: true,
             firstName: true,
@@ -381,7 +391,7 @@ export const assignStructure = async (req: Request, res: Response): Promise<void
           entityType: 'SALARY_STRUCTURE',
           entityId: structureId,
           action: 'ASSIGN',
-          changes: { employeeId: id, employeeName: `${updated.firstName} ${updated.lastName}` },
+          changes: { employeeId: assignment.employeeId, employeeName: `${updated.firstName} ${updated.lastName}`, basicSalary: assignment.basicSalary },
           performedById: req.user!.userId,
         });
       }
@@ -392,6 +402,90 @@ export const assignStructure = async (req: Request, res: Response): Promise<void
   } catch (error) {
     console.error('Error assigning structure:', error);
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to assign salary structure' } });
+  }
+};
+
+// ── POST /api/payroll/structures/:id/duplicate ───────────────
+export const duplicateStructure = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const sourceId = req.params.id as string;
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'New structure name is required (min 2 characters)' } });
+      return;
+    }
+
+    // Check source exists
+    const source = await prisma.salaryStructure.findUnique({
+      where: { id: sourceId },
+      include: { components: { orderBy: { order: 'asc' } } },
+    });
+
+    if (!source) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Source salary structure not found' } });
+      return;
+    }
+
+    // Check name uniqueness
+    const existing = await prisma.salaryStructure.findUnique({ where: { name: name.trim() } });
+    if (existing) {
+      res.status(409).json({ error: { code: 'DUPLICATE', message: 'A salary structure with this name already exists' } });
+      return;
+    }
+
+    // Deep copy: create new structure + all components in a transaction
+    const newStructure = await prisma.$transaction(async (tx) => {
+      const created = await tx.salaryStructure.create({
+        data: { name: name.trim() },
+      });
+
+      // Copy all components from source
+      if (source.components.length > 0) {
+        await tx.salaryComponent.createMany({
+          data: source.components.map((comp) => ({
+            structureId: created.id,
+            name: comp.name,
+            code: comp.code,
+            type: comp.type,
+            category: comp.category,
+            calculationType: comp.calculationType,
+            value: comp.value,
+            formula: comp.formula,
+            dependsOn: comp.dependsOn,
+            isStatutory: comp.isStatutory,
+            isTaxable: comp.isTaxable,
+            minValue: comp.minValue,
+            maxValue: comp.maxValue,
+            slabConfig: comp.slabConfig ?? Prisma.JsonNull,
+            order: comp.order,
+          })),
+        });
+      }
+
+      return tx.salaryStructure.findUnique({
+        where: { id: created.id },
+        include: {
+          components: { orderBy: { order: 'asc' } },
+          _count: { select: { employees: true } },
+        },
+      });
+    });
+
+    // Audit log
+    await logPayrollAudit({
+      entityType: 'SALARY_STRUCTURE',
+      entityId: newStructure!.id,
+      action: 'CREATE',
+      changes: { duplicatedFrom: sourceId, sourceName: source.name, name: name.trim(), componentsCopied: source.components.length },
+      performedById: req.user!.userId,
+    });
+    await createStructureVersion(newStructure!.id, req.user!.userId);
+
+    res.status(201).json({ data: newStructure });
+  } catch (error) {
+    console.error('Error duplicating structure:', error);
+    res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to duplicate salary structure' } });
   }
 };
 

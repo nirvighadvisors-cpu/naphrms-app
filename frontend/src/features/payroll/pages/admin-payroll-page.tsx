@@ -46,6 +46,7 @@ import {
   usePayrollRuns,
   usePayrollRun,
   useCreateStructure,
+  useDuplicateStructure,
   useDeleteStructure,
   useAddComponent,
   useUpdateComponent,
@@ -67,6 +68,7 @@ import {
   Edit,
   Lock,
   Eye,
+  Copy,
   Users,
   FileText,
   ChevronDown,
@@ -173,22 +175,55 @@ function AssignEmployeeModal({
   onOpenChange: (open: boolean) => void;
   onSuccess: (basicSalary: number) => void;
 }) {
-  const [employeeId, setEmployeeId] = useState('');
-  const [basicSalary, setBasicSalary] = useState('');
+  const [assignments, setAssignments] = useState<{employeeId: string; basicSalary: string}[]>([]);
+  const [bulkBasicSalary, setBulkBasicSalary] = useState('');
   const assignMutation = useAssignStructure();
   const { data: employeesData } = useEmployees({ limit: 200, status: 'ACTIVE' });
 
+  // Reset assignments when modal opens
+  React.useEffect(() => {
+    if (open) {
+      setAssignments([]);
+      setBulkBasicSalary('');
+    }
+  }, [open]);
+
+  const toggleEmployee = (empId: string) => {
+    if (assignments.find(a => a.employeeId === empId)) {
+      setAssignments(assignments.filter(a => a.employeeId !== empId));
+    } else {
+      setAssignments([...assignments, { employeeId: empId, basicSalary: bulkBasicSalary || '' }]);
+    }
+  };
+
+  const updateBasicSalary = (empId: string, val: string) => {
+    setAssignments(assignments.map(a => a.employeeId === empId ? { ...a, basicSalary: val } : a));
+  };
+
+  const applyBulkSalary = () => {
+    if (bulkBasicSalary) {
+      setAssignments(assignments.map(a => ({ ...a, basicSalary: bulkBasicSalary })));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employeeId || !basicSalary || !structureId) return;
+    if (!structureId || assignments.length === 0) return;
     
+    // Ensure all have valid salaries
+    const validAssignments = assignments.filter(a => parseFloat(a.basicSalary) > 0);
+    if (validAssignments.length === 0) return;
+
     assignMutation.mutate(
-      { structureId, employeeId, basicSalary: parseFloat(basicSalary) },
+      { 
+        structureId, 
+        assignments: validAssignments.map(a => ({ employeeId: a.employeeId, basicSalary: parseFloat(a.basicSalary) }))
+      },
       {
         onSuccess: () => {
-          onSuccess(parseFloat(basicSalary));
-          setEmployeeId('');
-          setBasicSalary('');
+          onSuccess(validAssignments[0]?.basicSalary ? parseFloat(validAssignments[0].basicSalary) : 0);
+          setAssignments([]);
+          setBulkBasicSalary('');
           onOpenChange(false);
         },
       }
@@ -197,42 +232,134 @@ function AssignEmployeeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-[650px] max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Assign & Configure Structure</DialogTitle>
+          <DialogTitle>Assign Structure to Employees</DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto pr-2 space-y-4 py-4">
+          <div className="flex gap-2 items-end bg-surface-offset/30 p-3 rounded-lg border border-border">
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs text-text-muted">Apply basic pay to all selected</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 50000"
+                value={bulkBasicSalary}
+                onChange={(e) => setBulkBasicSalary(e.target.value)}
+              />
+            </div>
+            <Button type="button" variant="secondary" onClick={applyBulkSalary}>Apply to All Selected</Button>
+          </div>
+
+          <div className="space-y-2 border border-border rounded-lg overflow-hidden">
+            <div className="bg-surface-offset px-3 py-2 text-xs font-semibold text-text-muted flex">
+              <div className="w-8"></div>
+              <div className="flex-1">Employee</div>
+              <div className="w-40">Basic Pay (₹)</div>
+            </div>
+            <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
+              {employeesData?.data?.map((emp) => {
+                const isSelected = assignments.some(a => a.employeeId === emp.id);
+                const assignment = assignments.find(a => a.employeeId === emp.id);
+                
+                return (
+                  <div key={emp.id} className={`flex items-center px-3 py-2 gap-3 transition-colors ${isSelected ? 'bg-primary/5' : 'hover:bg-surface-offset/50'}`}>
+                    <div className="w-8 flex justify-center">
+                      <Checkbox 
+                        checked={isSelected} 
+                        onCheckedChange={() => toggleEmployee(emp.id)} 
+                      />
+                    </div>
+                    <div className="flex-1 text-sm font-medium">
+                      {emp.firstName} {emp.lastName} <span className="text-text-muted font-normal text-xs ml-1">({emp.employeeCode})</span>
+                    </div>
+                    <div className="w-40">
+                      <Input
+                        type="number"
+                        placeholder="Basic Pay"
+                        className="h-8 text-sm"
+                        value={assignment?.basicSalary || ''}
+                        onChange={(e) => updateBasicSalary(emp.id, e.target.value)}
+                        disabled={!isSelected}
+                        required={isSelected}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="pt-2">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" onClick={handleSubmit} disabled={assignMutation.isPending || assignments.length === 0}>
+            {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Assign to {assignments.length} Employee{assignments.length !== 1 ? 's' : ''}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DuplicateStructureDialog({
+  sourceId,
+  sourceName,
+  open,
+  onOpenChange,
+}: {
+  sourceId: string | null;
+  sourceName: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [name, setName] = useState('');
+  const duplicateMutation = useDuplicateStructure();
+
+  React.useEffect(() => {
+    if (open && sourceName) {
+      setName(`Copy of ${sourceName}`);
+    }
+  }, [open, sourceName]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sourceId || !name) return;
+    
+    duplicateMutation.mutate(
+      { id: sourceId, name },
+      {
+        onSuccess: () => {
+          setName('');
+          onOpenChange(false);
+        },
+      }
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Duplicate Structure</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label htmlFor="employee-select">Employee</Label>
-            <Select value={employeeId} onValueChange={setEmployeeId} required>
-              <SelectTrigger id="employee-select"><SelectValue placeholder="Select an employee" /></SelectTrigger>
-              <SelectContent>
-                {employeesData?.data?.map((emp) => (
-                  <SelectItem key={emp.id} value={emp.id}>
-                    {emp.firstName} {emp.lastName} ({emp.employeeCode})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="basic-pay">Basic Pay (₹)</Label>
+            <Label htmlFor="dup-name">New Structure Name</Label>
             <Input
-              id="basic-pay"
-              type="number"
-              min="0"
-              step="0.01"
-              value={basicSalary}
-              onChange={(e) => setBasicSalary(e.target.value)}
+              id="dup-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
-              placeholder="e.g. 50000"
+              placeholder="e.g. L2 Sales Staff"
             />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={assignMutation.isPending}>
-              {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Proceed to Configuration
+            <Button type="submit" disabled={duplicateMutation.isPending}>
+              {duplicateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Duplicate
             </Button>
           </DialogFooter>
         </form>
@@ -917,6 +1044,11 @@ export function AdminPayrollPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignModalStructureId, setAssignModalStructureId] = useState<string | null>(null);
 
+  // Duplicate Structure Dialog State
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicateStructureId, setDuplicateStructureId] = useState<string | null>(null);
+  const [duplicateSourceName, setDuplicateSourceName] = useState('');
+
   // Sheet State
   const [sheetStructureId, setSheetStructureId] = useState<string | null>(null);
   const [sheetBasicSalary, setSheetBasicSalary] = useState<number>(0);
@@ -1101,17 +1233,18 @@ export function AdminPayrollPage() {
 
                         {/* Actions */}
                         <div className="flex gap-2 pt-1">
-                          {(structure._count?.employees || 0) === 0 ? (
-                            <Button variant="outline" size="sm" onClick={() => handleAssignStructure(structure.id)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Assign Structure
-                            </Button>
-                          ) : (
-                            <Button variant="outline" size="sm" onClick={() => handleViewStructure(structure.id, structure.employees?.[0]?.basicSalary || 0)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View & Edit
-                            </Button>
-                          )}
+                          <Button variant="outline" size="sm" onClick={() => handleAssignStructure(structure.id)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Assign Employees
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { setDuplicateStructureId(structure.id); setDuplicateSourceName(structure.name); setDuplicateOpen(true); }}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleViewStructure(structure.id, structure.employees?.[0]?.basicSalary || 0)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View & Edit
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1293,6 +1426,12 @@ export function AdminPayrollPage() {
 
       {/* Dialogs / Sheets */}
       <CreateStructureDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <DuplicateStructureDialog
+        sourceId={duplicateStructureId}
+        sourceName={duplicateSourceName}
+        open={duplicateOpen}
+        onOpenChange={setDuplicateOpen}
+      />
       <AssignEmployeeModal
         open={assignModalOpen}
         onOpenChange={setAssignModalOpen}

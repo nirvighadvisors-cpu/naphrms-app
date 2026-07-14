@@ -6,6 +6,7 @@ import {
   createStructure,
   getStructure,
   deleteStructure,
+  duplicateStructure,
   addComponent,
   updateComponent,
   deleteComponent,
@@ -30,6 +31,7 @@ router.get('/structures', requireAdmin, getStructures);
 router.post('/structures', requireAdmin, createStructure);
 router.get('/structures/:id', requireAdmin, getStructure);
 router.delete('/structures/:id', requireAdmin, deleteStructure);
+router.post('/structures/:id/duplicate', requireAdmin, duplicateStructure);
 router.post('/structures/:id/components', requireAdmin, addComponent);
 router.patch('/structures/:structureId/components/:componentId', requireAdmin, updateComponent);
 router.delete('/structures/:structureId/components/:componentId', requireAdmin, deleteComponent);

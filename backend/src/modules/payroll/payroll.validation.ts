@@ -44,9 +44,14 @@ export const assignStructureSchema = z.object({
   employeeId: z.string().uuid('Invalid employee ID').optional(),
   employeeIds: z.array(z.string().uuid('Invalid employee ID')).optional(),
   structureId: z.string().uuid('Invalid structure ID'),
-  basicSalary: z.number().nonnegative('Basic salary cannot be negative'),
-}).refine(data => data.employeeId || (data.employeeIds && data.employeeIds.length > 0), {
-  message: "Either employeeId or employeeIds is required",
+  basicSalary: z.number().nonnegative('Basic salary cannot be negative').optional(),
+  // New: per-employee basic pay assignments
+  assignments: z.array(z.object({
+    employeeId: z.string().uuid('Invalid employee ID'),
+    basicSalary: z.number().nonnegative('Basic salary cannot be negative'),
+  })).optional(),
+}).refine(data => data.employeeId || (data.employeeIds && data.employeeIds.length > 0) || (data.assignments && data.assignments.length > 0), {
+  message: "Either employeeId, employeeIds, or assignments is required",
 });
 
 // ── Generate Payroll Run ────────────────────────────────────

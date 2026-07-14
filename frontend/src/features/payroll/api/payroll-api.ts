@@ -209,8 +209,14 @@ export const payrollApi = {
   },
 
   // ─ Assign Structure ────────────────────────────────────────
-  assignStructure: async (data: { employeeId?: string; employeeIds?: string[]; structureId: string; basicSalary: number }): Promise<void> => {
+  assignStructure: async (data: { employeeId?: string; employeeIds?: string[]; structureId: string; basicSalary?: number; assignments?: { employeeId: string; basicSalary: number }[] }): Promise<void> => {
     await apiClient.post('payroll/assign', data);
+  },
+
+  // ─ Duplicate Structure ─────────────────────────────────────
+  duplicateStructure: async (id: string, data: { name: string }): Promise<SalaryStructure> => {
+    const res = await apiClient.post(`payroll/structures/${id}/duplicate`, data);
+    return res.data.data;
   },
 
   // ─ Payroll Runs ────────────────────────────────────────────

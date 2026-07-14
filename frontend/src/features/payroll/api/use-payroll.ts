@@ -92,6 +92,26 @@ export const useDeleteStructure = () => {
   });
 };
 
+export const useDuplicateStructure = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => payrollApi.duplicateStructure(id, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'structures'] });
+      toast({ title: 'Structure duplicated', description: 'Salary structure has been duplicated with all components.' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to duplicate structure',
+        description: error?.response?.data?.error?.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
 export const useAddComponent = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -172,11 +192,11 @@ export const useAssignStructure = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: { employeeId?: string; employeeIds?: string[]; structureId: string; basicSalary: number }) => payrollApi.assignStructure(data),
+    mutationFn: (data: { employeeId?: string; employeeIds?: string[]; structureId: string; basicSalary?: number; assignments?: { employeeId: string; basicSalary: number }[] }) => payrollApi.assignStructure(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payroll', 'structures'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      toast({ title: 'Structure assigned', description: 'Salary structure has been assigned to the employee.' });
+      toast({ title: 'Structure assigned', description: 'Salary structure has been assigned to the selected employees.' });
     },
     onError: (error: any) => {
       toast({
