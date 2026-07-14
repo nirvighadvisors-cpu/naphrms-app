@@ -59,6 +59,7 @@ app.use(
       const allowed = [
         config.frontendUrl,
         'https://naphrms-app.vercel.app',
+        'https://app.naphrms.com',
       ];
       // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin || allowed.some(u => origin.startsWith(u.replace(/\/$/, '')))) {
