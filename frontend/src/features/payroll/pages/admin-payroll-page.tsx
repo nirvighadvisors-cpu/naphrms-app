@@ -1232,7 +1232,7 @@ export function AdminPayrollPage() {
                         )}
 
                         {/* Actions */}
-                        <div className="flex gap-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
                           <Button variant="outline" size="sm" onClick={() => handleAssignStructure(structure.id)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Assign Employees
