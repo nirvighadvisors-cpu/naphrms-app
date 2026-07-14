@@ -1240,16 +1240,29 @@ function StatutoryTab() {
       wageCap: 0,
       employeeRate: 0,
       employerRate: 0,
+      slabConfig: null as any,
     }
   });
 
   const handleEdit = (rule: any) => {
     setEditingRule(rule);
+    
+    // Default config fallback
+    let defaultSlabConfig = rule.slabConfig;
+    if (!defaultSlabConfig) {
+      if (rule.ruleType === 'SLAB') {
+        defaultSlabConfig = [{ min: 0, max: 0, value: 0 }];
+      } else if (rule.ruleType === 'TAX_SLAB') {
+        defaultSlabConfig = { standardDeduction: 0, rebateLimit: 0, rebateAmount: 0, slabs: [{ min: 0, max: 0, rate: 0 }] };
+      }
+    }
+
     form.reset({
       isActive: rule.isActive,
       wageCap: rule.wageCap || 0,
       employeeRate: rule.employeeRate || 0,
       employerRate: rule.employerRate || 0,
+      slabConfig: defaultSlabConfig,
     });
   };
 
@@ -1264,6 +1277,44 @@ function StatutoryTab() {
         }
       });
     }
+  };
+
+  const slabConfig = form.watch('slabConfig');
+
+  // SLAB handlers
+  const updateSlabRow = (index: number, field: string, value: string) => {
+    const current = (form.getValues('slabConfig') || []) as any[];
+    const updated = [...current];
+    updated[index] = { ...updated[index], [field]: Number(value) };
+    form.setValue('slabConfig', updated);
+  };
+  const addSlabRow = () => {
+    const current = (form.getValues('slabConfig') || []) as any[];
+    form.setValue('slabConfig', [...current, { min: 0, max: 0, value: 0 }]);
+  };
+  const removeSlabRow = (index: number) => {
+    const current = (form.getValues('slabConfig') || []) as any[];
+    form.setValue('slabConfig', current.filter((_, i) => i !== index));
+  };
+
+  // TAX_SLAB handlers
+  const updateTaxConfig = (field: string, value: string) => {
+    const current = form.getValues('slabConfig') || { slabs: [] };
+    form.setValue('slabConfig', { ...current, [field]: Number(value) });
+  };
+  const updateTaxSlabRow = (index: number, field: string, value: string) => {
+    const current = form.getValues('slabConfig') || { slabs: [] };
+    const updatedSlabs = [...(current.slabs || [])];
+    updatedSlabs[index] = { ...updatedSlabs[index], [field]: Number(value) };
+    form.setValue('slabConfig', { ...current, slabs: updatedSlabs });
+  };
+  const addTaxSlabRow = () => {
+    const current = form.getValues('slabConfig') || { slabs: [] };
+    form.setValue('slabConfig', { ...current, slabs: [...(current.slabs || []), { min: 0, max: 0, rate: 0 }] });
+  };
+  const removeTaxSlabRow = (index: number) => {
+    const current = form.getValues('slabConfig') || { slabs: [] };
+    form.setValue('slabConfig', { ...current, slabs: current.slabs.filter((_: any, i: number) => i !== index) });
   };
 
   if (isLoading) return <div className="p-8 text-center text-text-muted">Loading statutory rules...</div>;
@@ -1305,7 +1356,7 @@ function StatutoryTab() {
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" onClick={() => handleEdit(rule)}>Edit Rule</Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Edit {rule.name}</DialogTitle>
                       </DialogHeader>
@@ -1314,8 +1365,9 @@ function StatutoryTab() {
                           <input type="checkbox" id="isActive" {...form.register('isActive')} className="rounded border-border" />
                           <Label htmlFor="isActive">Active</Label>
                         </div>
+                        
                         {rule.ruleType === 'PERCENTAGE' && (
-                          <>
+                          <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label>Employee Rate (%)</Label>
                               <Input type="number" step="0.01" {...form.register('employeeRate', { valueAsNumber: true })} />
@@ -1324,14 +1376,88 @@ function StatutoryTab() {
                               <Label>Employer Rate (%)</Label>
                               <Input type="number" step="0.01" {...form.register('employerRate', { valueAsNumber: true })} />
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2 col-span-2">
                               <Label>Wage Cap (₹)</Label>
                               <Input type="number" {...form.register('wageCap', { valueAsNumber: true })} />
                               <p className="text-xs text-text-muted">Set 0 for no cap</p>
                             </div>
-                          </>
+                          </div>
                         )}
-                        <DialogFooter>
+
+                        {rule.ruleType === 'SLAB' && Array.isArray(slabConfig) && (
+                          <div className="space-y-4 border border-border rounded-lg p-4 bg-surface-offset/30">
+                            <h4 className="text-sm font-semibold text-text">Deduction Slabs</h4>
+                            {slabConfig.map((slab: any, idx: number) => (
+                              <div key={idx} className="flex gap-2 items-end">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs">Min (₹)</Label>
+                                  <Input type="number" value={slab.min} onChange={(e) => updateSlabRow(idx, 'min', e.target.value)} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs">Max (₹)</Label>
+                                  <Input type="number" value={slab.max} onChange={(e) => updateSlabRow(idx, 'max', e.target.value)} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs">Deduction (₹)</Label>
+                                  <Input type="number" value={slab.value} onChange={(e) => updateSlabRow(idx, 'value', e.target.value)} />
+                                </div>
+                                <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => removeSlabRow(idx)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={addSlabRow} className="w-full mt-2">
+                              <Plus className="w-4 h-4 mr-2" /> Add Slab
+                            </Button>
+                          </div>
+                        )}
+
+                        {rule.ruleType === 'TAX_SLAB' && slabConfig && !Array.isArray(slabConfig) && (
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border border-border rounded-lg p-4 bg-surface-offset/30">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Standard Deduction (₹)</Label>
+                                <Input type="number" value={slabConfig.standardDeduction || 0} onChange={(e) => updateTaxConfig('standardDeduction', e.target.value)} />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Rebate Limit (₹)</Label>
+                                <Input type="number" value={slabConfig.rebateLimit || 0} onChange={(e) => updateTaxConfig('rebateLimit', e.target.value)} />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Rebate Amount (₹)</Label>
+                                <Input type="number" value={slabConfig.rebateAmount || 0} onChange={(e) => updateTaxConfig('rebateAmount', e.target.value)} />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-4 border border-border rounded-lg p-4 bg-surface-offset/30">
+                              <h4 className="text-sm font-semibold text-text">Tax Percentage Slabs</h4>
+                              {(slabConfig.slabs || []).map((slab: any, idx: number) => (
+                                <div key={idx} className="flex gap-2 items-end">
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs">Min (₹)</Label>
+                                    <Input type="number" value={slab.min} onChange={(e) => updateTaxSlabRow(idx, 'min', e.target.value)} />
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs">Max (₹)</Label>
+                                    <Input type="number" value={slab.max} onChange={(e) => updateTaxSlabRow(idx, 'max', e.target.value)} />
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs">Rate (%)</Label>
+                                    <Input type="number" step="0.1" value={slab.rate} onChange={(e) => updateTaxSlabRow(idx, 'rate', e.target.value)} />
+                                  </div>
+                                  <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => removeTaxSlabRow(idx)}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" onClick={addTaxSlabRow} className="w-full mt-2">
+                                <Plus className="w-4 h-4 mr-2" /> Add Tax Slab
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        <DialogFooter className="pt-4">
                           <Button type="button" variant="outline" onClick={() => setEditingRule(null)}>Cancel</Button>
                           <Button type="submit" disabled={updateRuleMutation.isPending}>Save Changes</Button>
                         </DialogFooter>
