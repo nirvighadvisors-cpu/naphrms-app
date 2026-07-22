@@ -23,6 +23,9 @@ export const useCurrentUser = () => {
     },
     retry: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true, // Re-validate session when network reconnects
+    refetchOnMount: 'always', // Always re-validate on component mount (app reopen)
+    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
   });
 
   return {

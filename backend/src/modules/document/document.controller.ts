@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../config/database';
 import { getSignedUrl } from '../../lib/storage';
 import { uploadEmployeeDocumentSchema, createPolicySchema, updatePolicySchema, replaceDocumentSchema, replacePolicySchema } from './document.validation';
-import { broadcastToRole, getHRAdminUserIds, getEmployeeName } from '../../services/notification.service';
+import { broadcastToRole, getHRAdminUserIds, getEmployeeName, notifyUsers } from '../../services/notification.service';
 
 // ── EMPLOYEE DOCUMENTS ────────────────────────────────────────
 
@@ -107,6 +107,7 @@ export const uploadEmployeeDocument = async (req: Request, res: Response): Promi
     res.status(201).json({ data: document });
 
     // Notify HR Admins
+    // Notify HR Admins if Employee uploads it
     if (req.user!.role !== 'HR_ADMIN') {
       const employeeName = await getEmployeeName(targetEmployeeId as string);
       const hrUserIds = await getHRAdminUserIds();
@@ -118,6 +119,18 @@ export const uploadEmployeeDocument = async (req: Request, res: Response): Promi
         type: 'SYSTEM',
         linkUrl: `/admin/employees/${targetEmployeeId}`,
       });
+    } else {
+      // If HR Admin uploads for an employee, notify the employee
+      const targetEmployee = await prisma.employee.findUnique({ where: { id: targetEmployeeId as string } });
+      if (targetEmployee?.userId && targetEmployee.userId !== req.user!.userId) {
+        await notifyUsers({
+          userIds: [targetEmployee.userId],
+          title: '📄 Document Added',
+          message: `HR has added a new document (${type.replace(/_/g, ' ')}) to your profile.`,
+          type: 'SYSTEM',
+          linkUrl: `/employee/documents`,
+        });
+      }
     }
   } catch (error: any) {
     res.status(500).json({ error: { code: 'CREATE_FAILED', message: 'Failed to upload document', details: error.message } });
@@ -207,6 +220,20 @@ export const replaceEmployeeDocument = async (req: Request, res: Response): Prom
     });
 
     res.json({ data: updatedDocument });
+
+    // Send notifications if the user replacing is HR but the owner is an employee
+    if (req.user!.role === 'HR_ADMIN' && existing.employeeId) {
+      const targetEmployee = await prisma.employee.findUnique({ where: { id: existing.employeeId } });
+      if (targetEmployee?.userId && targetEmployee.userId !== req.user!.userId) {
+        await notifyUsers({
+          userIds: [targetEmployee.userId],
+          title: '🔄 Document Replaced',
+          message: `HR has updated/replaced your document (${existing.type.replace(/_/g, ' ')}).`,
+          type: 'SYSTEM',
+          linkUrl: `/employee/documents`,
+        });
+      }
+    }
   } catch (error: any) {
     res.status(500).json({ error: { code: 'REPLACE_FAILED', message: 'Failed to replace document', details: error.message } });
   }

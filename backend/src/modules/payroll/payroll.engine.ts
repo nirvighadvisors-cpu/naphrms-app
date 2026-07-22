@@ -197,7 +197,7 @@ export function calculateSalaryBreakdown(
         formula: formulaStr,
         order: comp.order
       });
-    } else if (comp.category === 'STATUTORY_EMPLOYER' || comp.category === 'COMPANY_CONTRIBUTION') {
+    } else if (comp.category === 'STATUTORY_EMPLOYER' || (comp.category as any) === 'COMPANY_CONTRIBUTION') {
       contributionItems.push({
         name: comp.name,
         code: comp.code,

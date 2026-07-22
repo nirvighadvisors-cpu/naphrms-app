@@ -19,20 +19,20 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-// ── Helper ──────────────────────────────────────────────────
-const generateToken = (userId: string, role: string) => {
-  return jwt.sign({ userId, role }, config.jwtSecret as string, {
+// ── Helpers (exported for use by auth middleware) ───────────
+export const generateToken = (userId: string, role: string, tokenVersion: number = 0) => {
+  return jwt.sign({ userId, role, tokenVersion }, config.jwtSecret as string, {
     expiresIn: config.jwtExpiry as any,
   });
 };
 
-const setTokenCookie = (res: Response, token: string) => {
+export const setTokenCookie = (res: Response, token: string) => {
   // Convert something like "8h" or "7d" to milliseconds for cookie maxAge
   const isDays = config.jwtExpiry.endsWith('d');
   const isHours = config.jwtExpiry.endsWith('h');
   const num = parseInt(config.jwtExpiry);
 
-  let maxAge = 8 * 60 * 60 * 1000; // Default 8 hours
+  let maxAge = 7 * 24 * 60 * 60 * 1000; // Default 7 days
   if (isDays) maxAge = num * 24 * 60 * 60 * 1000;
   if (isHours) maxAge = num * 60 * 60 * 1000;
 
@@ -175,7 +175,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       },
     });
 
-    const token = generateToken(user.id, user.role);
+    const token = generateToken(user.id, user.role, user.tokenVersion);
     setTokenCookie(res, token);
 
     res.status(200).json({
@@ -331,7 +331,7 @@ export const activateAccount = async (req: Request, res: Response, next: NextFun
     });
 
     // 6. Auto-login: generate JWT and set cookie
-    const jwtToken = generateToken(updatedUser.id, updatedUser.role);
+    const jwtToken = generateToken(updatedUser.id, updatedUser.role, updatedUser.tokenVersion);
     setTokenCookie(res, jwtToken);
 
     res.status(200).json({
@@ -356,7 +356,24 @@ export const activateAccount = async (req: Request, res: Response, next: NextFun
   }
 };
 
-export const logout = (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
+  // Increment tokenVersion to invalidate ALL sessions for this user across all devices
+  try {
+    const token = req.cookies?.token;
+    if (token) {
+      const decoded = jwt.decode(token) as any;
+      if (decoded?.userId) {
+        await prisma.user.update({
+          where: { id: decoded.userId },
+          data: { tokenVersion: { increment: 1 } },
+        });
+      }
+    }
+  } catch (e) {
+    // Best-effort — proceed with cookie clear regardless
+    console.error('Failed to increment tokenVersion on logout:', e);
+  }
+
   res.clearCookie('token', {
     httpOnly: true,
     secure: config.nodeEnv === 'production',
@@ -445,6 +462,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
 
     const passwordHash = await bcrypt.hash(password, config.bcryptSaltRounds);
 
+    // Increment tokenVersion to invalidate all existing sessions (security: force re-login after password change)
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -454,6 +472,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
         status: user.status === 'INVITED' ? 'ACTIVE' : user.status,
         loginAttempts: 0,
         lockedUntil: null,
+        tokenVersion: { increment: 1 },
       },
     });
 

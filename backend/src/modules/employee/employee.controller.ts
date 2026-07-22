@@ -556,7 +556,11 @@ export const changeEmployeeStatus = async (req: Request, res: Response): Promise
 
       await tx.user.update({
         where: { id: existing.userId },
-        data: { status: userStatus },
+        data: {
+          status: userStatus,
+          // Invalidate all sessions when account is deactivated/terminated
+          ...(userStatus === 'INACTIVE' ? { tokenVersion: { increment: 1 } } : {}),
+        },
       });
 
       // Record status change in history
